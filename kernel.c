@@ -1,18 +1,79 @@
-#define UART_BASE	0x16000000
-#define FLAG_REG	0x18
-#define BUF_FULL	(1 << 5)
+#include "io.h"
+#include "gpio.h"
+#include "uart.h"
 
-static void putc(int c)
+/* A very rough approximation of delaying b n clock cycles. */
+static inline void delay_n_cycles(unsigned long n)
 {
-	*(volatile unsigned long *)UART_BASE = c;
+	n /= 2;
+	asm volatile("1:	subs	%0, %0, #1\n"
+		     "		bne	1b" : "+r"(n) : "r"(n) : "memory");
 }
+
+static void pinmux_cfg(void)
+{
+#define TX_LINE_BIT	(1 << 14)
+#define RX_LINE_BIT	(1 << 15)
+	unsigned long v;
+
+	v = readl(GPIO_BASE + GPFSEL_N_REG_OFFS(1));
+	v &= ~(GPFSEL_F_MASK(4) | GPFSEL_F_MASK(5));
+	v |= GPFSEL_F_VAL(4, FN_0) | GPFSEL_F_VAL(5, FN_0);
+	writel(GPIO_BASE + GPFSEL_N_REG_OFFS(1), v);
+
+	writel(GPIO_BASE + GPPUD_REG_OFFS, PUD_UP);
+	delay_n_cycles(150);
+	writel(GPIO_BASE + GPPUDCLK_N_REG_OFFS(0), TX_LINE_BIT | RX_LINE_BIT);
+	delay_n_cycles(150);
+	writel(GPIO_BASE + GPPUDCLK_N_REG_OFFS(0), 0);
+}
+
+static void platform_init(void)
+{
+	uart_disable();
+	pinmux_cfg();
+	uart_enable();
+	uart_flush_rx();
+}
+
+static void echo(void)
+{
+	int i;
+
+	for (i = 0; i < 10; ++i)
+		uart_putc(uart_getc());
+}
+
+static void init_bss(void)
+{
+	extern char __bss_start, __bss_end;
+	char *p;
+
+	for (p = &__bss_start; p < &__bss_end; ++p)
+		*p = 0;
+}
+
+enum {
+	R0, R1, R2, R3, R4, R5, R6,
+	R7, R8, R9, R10, R11, R12, SP, LR, PC
+};
+
+struct arm_regs {
+	unsigned long	r[16];
+};
+
+enum abort_cause {
+	ABORT_UNDEF,
+	ABORT_PREFETCH,
+	ABORT_DATA,
+};
 
 static void puts(const char *str)
 {
 	const char *p = str;
 
 	while (*p)
-		putc(*p++);
+		uart_putc(*p++);
 }
 
 void print_reg(unsigned long r)
@@ -32,48 +93,6 @@ void print_reg(unsigned long r)
 	puts(buf);
 }
 
-static void init_bss(void)
-{
-	extern char __bss_start, __bss_end;
-	char *p;
-
-	for (p = &__bss_start; p < &__bss_end; ++p)
-		*p = 0;
-}
-
-void start_kernel(void)
-{
-	static const char *str = "hello, world!";
-
-	puts(str);
-
-	print_reg(0x1234);
-
-	asm volatile(".word 0xffffffff" ::: "memory");
-
-	puts("excepted once!\n");
-
-	asm volatile(".word 0xffffffff" ::: "memory");
-
-	for (;;) {
-	}
-}
-
-enum {
-	R0, R1, R2, R3, R4, R5, R6,
-	R7, R8, R9, R10, R11, R12, SP, LR, PC
-};
-
-struct arm_regs {
-	unsigned long	r[16];
-};
-
-enum abort_cause {
-	ABORT_UNDEF,
-	ABORT_PREFETCH,
-	ABORT_DATA,
-};
-
 int do_abort(struct arm_regs *regs, enum abort_cause cause)
 {
 	int i;
@@ -90,4 +109,19 @@ int do_abort(struct arm_regs *regs, enum abort_cause cause)
 
 void do_irq(struct arm_regs *regs)
 {
+}
+
+void start_kernel(void)
+{
+	platform_init();
+
+	puts("welcome!\n");
+
+	for (;;) {
+		echo();
+		asm volatile(".word 0xffffffff" ::: "memory");
+	}
+
+	for (;;) {
+	}
 }
