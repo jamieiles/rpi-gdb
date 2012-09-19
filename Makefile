@@ -2,7 +2,8 @@ CC := $(CROSS_COMPILE)gcc
 LD := $(CROSS_COMPILE)ld
 OBJCOPY := $(CROSS_COMPILE)objcopy
 
-CPPFLAGS := -ggdb -nostdlib -nostdinc -ffreestanding -marm -O2 -march=armv6zk
+CPPFLAGS := -ggdb -nostdlib -nostdinc -ffreestanding -marm -O2 -march=armv6zk \
+	    -Wall -Werror
 LDFLAGS := -nostdlib -ffreestanding -T ldscript.X
 
 OBJS := entry.o \

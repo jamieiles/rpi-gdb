@@ -1,6 +1,10 @@
 #include "io.h"
 #include "gpio.h"
 #include "uart.h"
+#include "debug.h"
+
+#define __used	__attribute__((used))
+#define NULL	((void *)0)
 
 /* A very rough approximation of delaying b n clock cycles. */
 static inline void delay_n_cycles(unsigned long n)
@@ -44,7 +48,7 @@ static void echo(void)
 		uart_putc(uart_getc());
 }
 
-static void init_bss(void)
+static void __used init_bss(void)
 {
 	extern char __bss_start, __bss_end;
 	char *p;
@@ -76,7 +80,7 @@ static void puts(const char *str)
 		uart_putc(*p++);
 }
 
-void print_reg(unsigned long r)
+void print_hex(unsigned long r)
 {
 	char buf[9] = {};
 	char digits[] = {
@@ -93,18 +97,72 @@ void print_reg(unsigned long r)
 	puts(buf);
 }
 
-int do_abort(struct arm_regs *regs, enum abort_cause cause)
+static void dump_regs(struct arm_regs *regs)
 {
 	int i;
-
-	puts("undef!\n");
+	const char * const reg_names[] = {
+		"r0 ", "r1 ", "r2 ", "r3 ",
+		"r4 ", "r5 ", "r6 ", "r7 ",
+		"r8 ", "r9 ", "r10", "r11",
+		"r12", "sp ", "lr ", "pc "
+	};
 
 	for (i = 0; i < 16; ++i) {
-		print_reg(i);
+		puts(reg_names[i]);
 		puts(": ");
-		print_reg(regs->r[i]);
+		print_hex(regs->r[i]);
 		puts("\n");
 	}
+}
+
+static void panic(void)
+{
+	BUG("panic!, entering infinite loop...");
+}
+
+static const struct bug_entry *find_bug(unsigned long addr)
+{
+	extern const struct bug_entry __bug_start, __bug_end;
+	const struct bug_entry *b;
+
+	for (b = &__bug_start; b < &__bug_end; ++b)
+		if (b->addr == addr)
+			return b;
+
+	return NULL;
+}
+
+static void show_bug(const struct bug_entry *b,
+		     struct arm_regs *regs)
+{
+	puts("\nBUG: ");
+	puts(b->filename);
+	puts(":");
+	print_hex(b->line);
+	puts(" ");
+	puts(b->msg);
+	puts("\n");
+	dump_regs(regs);
+}
+
+static void handle_bugs(struct arm_regs *regs)
+{
+	const struct bug_entry *b = find_bug(regs->r[PC]);
+
+	if (!b)
+		return;
+
+	show_bug(b, regs);
+
+	for (;;)
+		continue;
+}
+
+void do_abort(struct arm_regs *regs, enum abort_cause cause)
+{
+	handle_bugs(regs);
+	dump_regs(regs);
+	panic();
 }
 
 void do_irq(struct arm_regs *regs)
@@ -119,7 +177,7 @@ void start_kernel(void)
 
 	for (;;) {
 		echo();
-		asm volatile(".word 0xffffffff" ::: "memory");
+		BUG("test");
 	}
 
 	for (;;) {

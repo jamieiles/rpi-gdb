@@ -23,6 +23,12 @@ SECTIONS {
 	}
 	__bss_end = . ;
 
+	__bug_start = . ;
+	.bugtable : {
+		*(.bugtable)
+	}
+	__bug_end = . ;
+
 	/DISCARD/ : {
 		*(.note.*)
 	}
