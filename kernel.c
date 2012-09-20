@@ -30,8 +30,12 @@ static void echo(void)
 {
 	int i;
 
-	for (i = 0; i < 10; ++i)
-		uart_putc(uart_getc());
+	for (i = 0; i < 10; ++i) {
+		int c = uart_getc();
+		if (c == 's')
+			asm volatile("smc	#0" ::: "memory");
+		uart_putc(c);
+	}
 }
 
 static void __used init_bss(void)
@@ -101,9 +105,14 @@ static void dump_regs(struct arm_regs *regs)
 	}
 }
 
-static void panic(void)
+void panic(void)
 {
 	BUG("panic!, entering infinite loop...");
+}
+
+void mon_panic(void)
+{
+	BUG("monitor paniced!");
 }
 
 static const struct bug_entry *find_bug(unsigned long addr)
@@ -179,6 +188,13 @@ enum abort_t do_reserved(struct arm_regs *regs)
 	return ABORT_NEXT_INSN;
 }
 
+enum abort_t do_monitor(struct arm_regs *regs)
+{
+	puts("in monitor mode!\n");
+
+	return ABORT_NEXT_INSN;
+}
+
 enum abort_t do_swi(struct arm_regs *regs)
 {
 	puts("in monitor mode!\n");
@@ -193,11 +209,18 @@ enum abort_t do_irq(struct arm_regs *regs)
 
 enum abort_t do_fiq(struct arm_regs *regs)
 {
+	return ABORT_RESTART;
 }
+
+extern void init_monitor(void *stack_top);
+
+#define MON_STACK_WORDS	1024
+unsigned long monitor_stack[MON_STACK_WORDS];
 
 void start_kernel(void)
 {
 	platform_init();
+	init_monitor(monitor_stack + MON_STACK_WORDS - 4);
 
 	puts("welcome!\n");
 

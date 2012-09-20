@@ -9,7 +9,8 @@ LDFLAGS := -nostdlib -ffreestanding -T ldscript.X -Wl,--build-id=none
 OBJS := entry.o \
 	kernel.o \
 	uart.o \
-	pinmux.o
+	pinmux.o \
+	tzvecs.o
 
 all:	install
 

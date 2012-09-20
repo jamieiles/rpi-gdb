@@ -2,6 +2,7 @@
 #define __ASSEMBLY_H__
 
 #define CPSR_MODE_SVC	0x13
+#define CPSR_MODE_MON	0x16
 
 .macro push_arm_regs mode
 	sub	sp, sp, #64
