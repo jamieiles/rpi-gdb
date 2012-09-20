@@ -4,11 +4,12 @@ OBJCOPY := $(CROSS_COMPILE)objcopy
 
 CPPFLAGS := -ggdb -nostdlib -nostdinc -ffreestanding -marm -O2 -march=armv6zk \
 	    -Wall -Werror
-LDFLAGS := -nostdlib -ffreestanding -T ldscript.X
+LDFLAGS := -nostdlib -ffreestanding -T ldscript.X -Wl,--build-id=none
 
 OBJS := entry.o \
 	kernel.o \
-	uart.o
+	uart.o \
+	pinmux.o
 
 all:	install
 

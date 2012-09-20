@@ -1,13 +1,6 @@
 #ifndef __GPIO_H__
 #define __GPIO_H__
 
-#define GPIO_BASE		(PERIPH_BASE + 0x00200000)
-#define GPFSEL_N_REG_OFFS(n)	((n) * 4)
-
-#define GPFSEL_F_SHIFT(f)	((f) * 3)
-#define GPFSEL_F_MASK(f)	(0x7 << GPFSEL_F_SHIFT((f)))
-#define GPFSEL_F_VAL(f, fn)	(fn << GPFSEL_F_SHIFT((f)))
-
 /* The oddly ordered function mappings... */
 enum gpio_function {
 	FN_IN,
@@ -21,14 +14,22 @@ enum gpio_function {
 	FN_MASK = 0x7,
 };
 
-#define GPPUD_REG_OFFS		0x94
-
 enum pud_mode {
 	PUD_OFF,
 	PUD_DOWN,
 	PUD_UP
 };
 
-#define GPPUDCLK_N_REG_OFFS(n)	((n) * 4 + 0x98)
+struct pinmux_cfg {
+	int			pin;
+	enum pud_mode		pud;
+	enum gpio_function	function;
+};
+#define PINMUX(__pin, __pud, __function) \
+	{ .pin = (__pin), .pud = (__pud), .function = (__function) }
+
+int pinmux_cfg_one(const struct pinmux_cfg *cfg);
+int pinmux_cfg_many(const struct pinmux_cfg *cfg,
+		    unsigned int count);
 
 #endif /* __GPIO_H__ */

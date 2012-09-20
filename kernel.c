@@ -6,30 +6,16 @@
 #define __used	__attribute__((used))
 #define NULL	((void *)0)
 
-/* A very rough approximation of delaying b n clock cycles. */
-static inline void delay_n_cycles(unsigned long n)
-{
-	n /= 2;
-	asm volatile("1:	subs	%0, %0, #1\n"
-		     "		bne	1b" : "+r"(n) : "r"(n) : "memory");
-}
+#define ARRAY_SIZE(__arr) (sizeof((__arr)) / sizeof((__arr)[0]))
 
 static void pinmux_cfg(void)
 {
-#define TX_LINE_BIT	(1 << 14)
-#define RX_LINE_BIT	(1 << 15)
-	unsigned long v;
-
-	v = readl(GPIO_BASE + GPFSEL_N_REG_OFFS(1));
-	v &= ~(GPFSEL_F_MASK(4) | GPFSEL_F_MASK(5));
-	v |= GPFSEL_F_VAL(4, FN_0) | GPFSEL_F_VAL(5, FN_0);
-	writel(GPIO_BASE + GPFSEL_N_REG_OFFS(1), v);
-
-	writel(GPIO_BASE + GPPUD_REG_OFFS, PUD_UP);
-	delay_n_cycles(150);
-	writel(GPIO_BASE + GPPUDCLK_N_REG_OFFS(0), TX_LINE_BIT | RX_LINE_BIT);
-	delay_n_cycles(150);
-	writel(GPIO_BASE + GPPUDCLK_N_REG_OFFS(0), 0);
+	struct pinmux_cfg cfg[] = {
+		PINMUX(14, PUD_UP, FN_0),
+		PINMUX(15, PUD_UP, FN_0),
+	};
+	int err = pinmux_cfg_many(cfg, ARRAY_SIZE(cfg));
+	BUG_ON(err, "failed to configure pinmux");
 }
 
 static void platform_init(void)
