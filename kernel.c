@@ -144,14 +144,54 @@ static void handle_bugs(struct arm_regs *regs)
 		continue;
 }
 
-void do_abort(struct arm_regs *regs, enum abort_cause cause)
+enum abort_t {
+	ABORT_RESTART,
+	ABORT_NEXT_INSN,
+};
+
+enum abort_t do_undef(struct arm_regs *regs)
 {
 	handle_bugs(regs);
 	dump_regs(regs);
 	panic();
+
+	return ABORT_NEXT_INSN;
 }
 
-void do_irq(struct arm_regs *regs)
+enum abort_t do_prefetch(struct arm_regs *regs)
+{
+	BUG("prefetch abort\n");
+
+	return ABORT_NEXT_INSN;
+}
+
+enum abort_t do_dabort(struct arm_regs *regs)
+{
+	BUG("prefetch abort\n");
+
+	return ABORT_NEXT_INSN;
+}
+
+enum abort_t do_reserved(struct arm_regs *regs)
+{
+	BUG("unhandled exception\n");
+
+	return ABORT_NEXT_INSN;
+}
+
+enum abort_t do_swi(struct arm_regs *regs)
+{
+	puts("in monitor mode!\n");
+
+	return ABORT_NEXT_INSN;
+}
+
+enum abort_t do_irq(struct arm_regs *regs)
+{
+	return ABORT_RESTART;
+}
+
+enum abort_t do_fiq(struct arm_regs *regs)
 {
 }
 
