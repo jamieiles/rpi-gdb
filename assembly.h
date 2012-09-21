@@ -4,6 +4,9 @@
 #define CPSR_MODE_SVC	0x13
 #define CPSR_MODE_MON	0x16
 
+#define IRQ_DISABLE	0x80
+#define FIQ_DISABLE	0x40
+
 .macro push_arm_regs mode
 	sub	sp, sp, #64
 	stmia	sp, {r0-r12}		/* Push the main registers. */
@@ -11,6 +14,7 @@
 	str	r0, [sp, #60]
 
 	ldr	r0, [sp, #72]		/* Switch to old mode, grab sp + lr. */
+	orr	r0, r0, #(IRQ_DISABLE | FIQ_DISABLE)
 	msr	cpsr_c, r0
 	mov	r1, sp
 	and	r0, r0, #0x1f		/*
