@@ -2,6 +2,7 @@
 #include "gpio.h"
 #include "uart.h"
 #include "debug.h"
+#include "regs.h"
 
 #define __used	__attribute__((used))
 #define NULL	((void *)0)
@@ -46,21 +47,6 @@ static void __used init_bss(void)
 	for (p = &__bss_start; p < &__bss_end; ++p)
 		*p = 0;
 }
-
-enum {
-	R0, R1, R2, R3, R4, R5, R6,
-	R7, R8, R9, R10, R11, R12, SP, LR, PC
-};
-
-struct arm_regs {
-	unsigned long	r[16];
-};
-
-enum abort_cause {
-	ABORT_UNDEF,
-	ABORT_PREFETCH,
-	ABORT_DATA,
-};
 
 static void puts(const char *str)
 {
@@ -152,11 +138,6 @@ static void handle_bugs(struct arm_regs *regs)
 	for (;;)
 		continue;
 }
-
-enum abort_t {
-	ABORT_RESTART,
-	ABORT_NEXT_INSN,
-};
 
 enum abort_t do_undef(struct arm_regs *regs)
 {
