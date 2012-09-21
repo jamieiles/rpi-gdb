@@ -1,3 +1,5 @@
+CROSS_COMPILE ?= arm-linux-gnueabi-
+ARCH ?= arm
 CC := $(CROSS_COMPILE)gcc
 LD := $(CROSS_COMPILE)ld
 OBJCOPY := $(CROSS_COMPILE)objcopy
@@ -11,6 +13,7 @@ OBJS := entry.o \
 	uart.o \
 	pinmux.o \
 	tzvecs.o \
+	gdbstub.o \
 	printk.o
 
 all:	install

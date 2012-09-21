@@ -1,3 +1,4 @@
+#include "gdbstub.h"
 #include "io.h"
 #include "gpio.h"
 #include "uart.h"
@@ -24,20 +25,6 @@ static void platform_init(void)
 {
 	uart_disable();
 	pinmux_cfg();
-	uart_enable();
-	uart_flush_rx();
-}
-
-static void echo(void)
-{
-	int i;
-
-	for (i = 0; i < 10; ++i) {
-		int c = uart_getc();
-		if (c == 's')
-			asm volatile("smc	#0" ::: "memory");
-		uart_putc(c);
-	}
 }
 
 static void __used init_bss(void)
@@ -70,11 +57,6 @@ static void dump_regs(struct arm_regs *regs)
 void panic(void)
 {
 	BUG("panic!, entering infinite loop...");
-}
-
-void mon_panic(void)
-{
-	BUG("monitor paniced!");
 }
 
 static const struct bug_entry *find_bug(unsigned long addr)
@@ -145,13 +127,6 @@ enum abort_t do_reserved(struct arm_regs *regs)
 	return ABORT_NEXT_INSN;
 }
 
-enum abort_t do_monitor(struct arm_regs *regs)
-{
-	puts("in monitor mode!\n");
-
-	return ABORT_NEXT_INSN;
-}
-
 enum abort_t do_swi(struct arm_regs *regs)
 {
 	puts("in monitor mode!\n");
@@ -161,31 +136,22 @@ enum abort_t do_swi(struct arm_regs *regs)
 
 enum abort_t do_irq(struct arm_regs *regs)
 {
+	puts("in irq handler\n");
 	return ABORT_RESTART;
 }
 
 enum abort_t do_fiq(struct arm_regs *regs)
 {
+	puts("in fiq handler\n");
 	return ABORT_RESTART;
 }
-
-extern void init_monitor(void *stack_top);
-
-#define MON_STACK_WORDS	1024
-unsigned long monitor_stack[MON_STACK_WORDS];
 
 void start_kernel(void)
 {
 	platform_init();
-	init_monitor(monitor_stack + MON_STACK_WORDS - 4);
+	gdbstub_init();
+	asm volatile("cpsie	f");
 
-	puts("welcome!\n");
-
-	for (;;) {
-		echo();
-		BUG("test");
-	}
-
-	for (;;) {
-	}
+	for (;;)
+		find_bug(0);
 }
