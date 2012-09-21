@@ -3,6 +3,7 @@
 #include "uart.h"
 #include "debug.h"
 #include "regs.h"
+#include "printk.h"
 
 #define __used	__attribute__((used))
 #define NULL	((void *)0)
@@ -46,31 +47,6 @@ static void __used init_bss(void)
 
 	for (p = &__bss_start; p < &__bss_end; ++p)
 		*p = 0;
-}
-
-static void puts(const char *str)
-{
-	const char *p = str;
-
-	while (*p)
-		uart_putc(*p++);
-}
-
-void print_hex(unsigned long r)
-{
-	char buf[9] = {};
-	char digits[] = {
-		'0', '1', '2', '3', '4', '5', '6', '7',
-		'8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-	};
-	int i;
-
-	for (i = 0; i < 8; i++) {
-		unsigned long t = (r & (0xf << (i * 4))) >> (i * 4);
-		buf[7 - i] = digits[t];
-	}
-
-	puts(buf);
 }
 
 static void dump_regs(struct arm_regs *regs)

@@ -10,7 +10,8 @@ OBJS := entry.o \
 	kernel.o \
 	uart.o \
 	pinmux.o \
-	tzvecs.o
+	tzvecs.o \
+	printk.o
 
 all:	install
 
