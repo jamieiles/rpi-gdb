@@ -36,14 +36,14 @@ static void __used init_bss(void)
 		*p = 0;
 }
 
-static void dump_regs(struct arm_regs *regs)
+void dump_regs(struct arm_regs *regs)
 {
 	int i;
 	const char * const reg_names[] = {
 		"r0 ", "r1 ", "r2 ", "r3 ",
 		"r4 ", "r5 ", "r6 ", "r7 ",
 		"r8 ", "r9 ", "r10", "r11",
-		"r12", "sp ", "lr ", "pc "
+		"r12", "sp ", "lr ", "pc ",
 	};
 
 	for (i = 0; i < 16; ++i) {
@@ -52,6 +52,9 @@ static void dump_regs(struct arm_regs *regs)
 		print_hex(regs->r[i]);
 		puts("\n");
 	}
+	puts("cpsr: ");
+	print_hex(regs->r[CPSR]);
+	puts("\n");
 }
 
 void panic(void)
@@ -97,53 +100,51 @@ static void handle_bugs(struct arm_regs *regs)
 		continue;
 }
 
-enum abort_t do_undef(struct arm_regs *regs)
+void do_undef(struct arm_regs *regs)
 {
 	handle_bugs(regs);
 	dump_regs(regs);
 	panic();
 
-	return ABORT_NEXT_INSN;
+	regs->r[PC] += 4;
 }
 
-enum abort_t do_prefetch(struct arm_regs *regs)
+void do_prefetch(struct arm_regs *regs)
 {
 	BUG("prefetch abort\n");
 
-	return ABORT_NEXT_INSN;
+	regs->r[PC] += 4;
 }
 
-enum abort_t do_dabort(struct arm_regs *regs)
+void do_dabort(struct arm_regs *regs)
 {
 	BUG("prefetch abort\n");
 
-	return ABORT_NEXT_INSN;
+	regs->r[PC] += 4;
 }
 
-enum abort_t do_reserved(struct arm_regs *regs)
+void do_reserved(struct arm_regs *regs)
 {
 	BUG("unhandled exception\n");
 
-	return ABORT_NEXT_INSN;
+	regs->r[PC] += 4;
 }
 
-enum abort_t do_swi(struct arm_regs *regs)
+void do_swi(struct arm_regs *regs)
 {
 	puts("in monitor mode!\n");
 
-	return ABORT_NEXT_INSN;
+	regs->r[PC] += 4;
 }
 
-enum abort_t do_irq(struct arm_regs *regs)
+void do_irq(struct arm_regs *regs)
 {
 	puts("in irq handler\n");
-	return ABORT_RESTART;
 }
 
-enum abort_t do_fiq(struct arm_regs *regs)
+void do_fiq(struct arm_regs *regs)
 {
 	puts("in fiq handler\n");
-	return ABORT_RESTART;
 }
 
 void start_kernel(void)

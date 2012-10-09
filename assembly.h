@@ -8,32 +8,37 @@
 #define FIQ_DISABLE	0x40
 
 .macro push_arm_regs mode
-	sub	sp, sp, #64
+	sub	sp, sp, #68
 	stmia	sp, {r0-r12}		/* Push the main registers. */
-	ldr	r0, [sp, #68]
+	ldr	r0, [sp, #72]
 	str	r0, [sp, #60]
 
-	ldr	r0, [sp, #72]		/* Switch to old mode, grab sp + lr. */
+	ldr	r0, [sp, #76]		/* Switch to old mode, grab sp + lr. */
+	mov	r3, r0
 	orr	r0, r0, #(IRQ_DISABLE | FIQ_DISABLE)
 	msr	cpsr_c, r0
 	mov	r1, sp
-	and	r0, r0, #0x1f		/*
-					 * If we came from SVC then we need to
-					 * nobble the SP so that it looks
-					 * like it was before the exception.
-					 */
-	cmp	r0, \mode
-	addeq	r1, r1, #76
 	mov	r2, lr
 	cps	\mode
 	str	r1, [sp, #52]
 	str	r2, [sp, #56]
+	str	r3, [sp, #64]
 	mov	r0, sp
 .endm
 
-.macro pop_arm_regs
+.macro pop_arm_regs	mode
+	ldr	r1, [sp, #52]
+	ldr	r2, [sp, #56]
+	ldr	r0, [sp, #64]		/* Switch to old mode, grab sp + lr. */
+	orr	r0, r0, #(IRQ_DISABLE | FIQ_DISABLE)
+	msr	cpsr_c, r0
+	mov	sp, r1			/* Restore sp. */
+	mov	lr, r2			/* Restore lr. */
+	cps	\mode
+	ldr	r0, [sp, #60]
+	str	r0, [sp, #72]		/* Fixup return PC. */
 	ldmia	sp, {r0-r12}
-	add	sp, #64
+	add	sp, #68
 .endm
 
 .macro ex_handler lr_fixup, handler, mode
@@ -42,20 +47,10 @@
 	cps	\mode
 	cpsid	if
 	push	{lr}
+
 	push_arm_regs \mode
 	bl	\handler
-	mov	lr, r0
-	pop_arm_regs
-
-	/*
-	 * Fixup the return address.  The handler returns 0 if we want to
-	 * carry on from the next instruction, otherwise return 1 to retry the
-	 * faulting instruction.
-	 */
-	cmp	lr, #1
-	ldreq	lr, [sp, #4]
-	addeq	lr, lr, #4
-	streq	lr, [sp, #4]
+	pop_arm_regs \mode
 
 	pop	{lr}
 	cpsie	if

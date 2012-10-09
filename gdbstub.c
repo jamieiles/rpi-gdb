@@ -22,20 +22,17 @@ void mon_panic(void)
 	BUG("monitor paniced!");
 }
 
-enum abort_t do_monitor(struct arm_regs *regs)
+void do_monitor(struct arm_regs *regs)
 {
 	puts("\nin monitor mode: ");
 	print_hex(regs->r[PC]);
 	puts("\n");
 
-	return ABORT_NEXT_INSN;
 }
 
-enum abort_t do_monitor_fiq(struct arm_regs *regs)
+void do_monitor_fiq(struct arm_regs *regs)
 {
-	uart_putc(uart_getc());
-
-	return ABORT_RESTART;
+	uart_getc();
 }
 
 #define UART_INT		57
