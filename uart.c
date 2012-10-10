@@ -100,10 +100,10 @@ void uart_enable(unsigned long flags)
 	writel(UART0_BASE + UART_IBRD_REG_OFFS, 1);
 	writel(UART0_BASE + UART_FBRD_REG_OFFS, 40);
 	writel(UART0_BASE + UART_LCRH_REG_OFFS, LCRH_WLEN8_MASK);
-	writel(UART0_BASE + UART_CR_REG_OFFS,
-	       CR_UART_EN_MASK | CR_TXE_MASK | CR_RXE_MASK);
-
+	writel(UART0_BASE + UART_IFLS_REG_OFFS, 0);
 	if (flags & UART_INT_ENABLE)
 		writel(UART0_BASE + UART_IMSC_REG_OFFS,
 		       INT_RX);
+	writel(UART0_BASE + UART_CR_REG_OFFS,
+	       CR_UART_EN_MASK | CR_TXE_MASK | CR_RXE_MASK);
 }
