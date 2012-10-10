@@ -9,6 +9,17 @@ void puts(const char *str)
 		uart_putc(*p++);
 }
 
+void put_hex_byte(char *dst, char b)
+{
+	char digits[] = {
+		'0', '1', '2', '3', '4', '5', '6', '7',
+		'8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+	};
+        *dst++ = digits[(b & 0xf0) >> 4];
+        *dst++ = digits[b & 0xf];
+        *dst = '\0';
+}
+
 void print_hex(unsigned long r)
 {
 	char buf[9] = {};
