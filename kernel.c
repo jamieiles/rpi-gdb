@@ -13,6 +13,7 @@ static void pinmux_cfg(void)
 	struct pinmux_cfg cfg[] = {
 		PINMUX(14, PUD_UP, FN_0),
 		PINMUX(15, PUD_UP, FN_0),
+		PINMUX(16, PUD_OFF, FN_OUT),
 	};
 	int err = pinmux_cfg_many(cfg, ARRAY_SIZE(cfg));
 	BUG_ON(err, "failed to configure pinmux");
@@ -144,12 +145,23 @@ void do_fiq(struct arm_regs *regs)
 	puts("in fiq handler\n");
 }
 
+static inline void delay_n_cycles(unsigned long n)
+{
+	n /= 2;
+	asm volatile("1:	subs	%0, %0, #1\n"
+		     "		bne	1b" : "+r"(n) : "r"(n) : "memory");
+}
+
 void start_kernel(void)
 {
 	platform_init();
 	gdbstub_init();
 	asm volatile("cpsie	f");
 
-	for (;;)
-		find_bug(0);
+	for (;;) {
+		writel(PERIPH_BASE + 0x00200000 + 0x1c, 1 << 16);
+		delay_n_cycles(50000000);
+		writel(PERIPH_BASE + 0x00200000 + 0x28, 1 << 16);
+		delay_n_cycles(50000000);
+	}
 }
