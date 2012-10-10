@@ -1,7 +1,9 @@
 #include "debug.h"
 #include "io.h"
+#include "kernel.h"
 #include "regs.h"
 #include "printk.h"
+#include "types.h"
 #include "uart.h"
 
 #define IRQC_BASE			0x2000B000

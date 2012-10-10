@@ -1,15 +1,12 @@
 #include "gdbstub.h"
 #include "io.h"
 #include "gpio.h"
+#include "kernel.h"
 #include "uart.h"
 #include "debug.h"
 #include "regs.h"
 #include "printk.h"
-
-#define __used	__attribute__((used))
-#define NULL	((void *)0)
-
-#define ARRAY_SIZE(__arr) (sizeof((__arr)) / sizeof((__arr)[0]))
+#include "types.h"
 
 static void pinmux_cfg(void)
 {
