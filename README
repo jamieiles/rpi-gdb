@@ -1,0 +1,42 @@
+Raspberry Pi Remote Serial Protocol
+===================================
+Jamie Iles <jamie@jamieiles.com>
+
+Purpose
+-------
+
+This implements a remote serial protocol (RSP) for GDB allowing debugging of
+bare-metal applications on a Raspberry Pi without a JTAG debugger.
+
+Architecture
+------------
+
+The RSP uses ARM's TrustZone to allow debugging of the user application
+without requiring modification of the application.  The 2 entries to the RSP
+are:
+
+  - Data from the GDB host: this is received on the UART and raises a FIQ and
+  FIQ's are configured to enter secure monitor mode.
+  - Breakpoints: breakpoints are implemented with an SMC call to enter into
+  secure monitor mode.
+
+This implies that the application being debugged may not make use of the
+security extensions.
+
+Limitations
+-----------
+
+- Watchpoints aren't supported - there's no way to configure a watchpoint
+trigger to enter the RSP without modification of the application and that
+would need to be done carefully to avoid recursive loops in the RSP.
+
+- FIQ's are reserved by the RSP.  The Broadcom SoC only allows 1 IRQ to be
+configured as a FIQ and that's used by the RSP so applications must not use
+FIQ's.
+
+- Non-identity MMU mappings are not supported.  The RSP loads at a fixed
+address and expects that not to change so if the application sets up a
+non-identity MMU mapping the RSP will cease to function.  A future enhancement
+will be to drop the application into non-secure mode (NS=1) and use the
+address translation capabilities to perform all memory accesses from the RSP
+and have that use it's own MMU configuration.

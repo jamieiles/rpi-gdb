@@ -1,3 +1,8 @@
+/*
+ * Raspberry PI Remote Serial Protocol.
+ * Copyright 2012 Jamie Iles, jamie@jamieiles.com.
+ * Licensed under GPLv2.
+ */
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
