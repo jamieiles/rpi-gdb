@@ -1,12 +1,7 @@
 OUTPUT_ARCH(arm)
-ENTRY(_vec_reset)
+ENTRY(_entry)
 SECTIONS {
-	.text.vectors 0x01000000 : {
-		*(.text.vectors)
-		*(.text.tzvectors)
-	}
-
-	.text : {
+	.text 0x00008000 : {
 		*(.text*)
 	}
 
@@ -23,12 +18,6 @@ SECTIONS {
 		*(.bss)
 	}
 	__bss_end = . ;
-
-	__bug_start = . ;
-	.bugtable : {
-		*(.bugtable)
-	}
-	__bug_end = . ;
 
 	/DISCARD/ : {
 		*(.note.*)

@@ -2,3 +2,6 @@
 *.o
 kernel
 kernel.img
+loader
+rsp
+rsp.img
