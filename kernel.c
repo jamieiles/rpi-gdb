@@ -161,7 +161,7 @@ void start_kernel(void)
 {
 	platform_init();
 	gdbstub_init();
-	asm volatile("cpsie	f");
+	asm volatile("cpsie	if");
 
 	for (;;) {
 		writel(PERIPH_BASE + 0x00200000 + 0x1c, 1 << 16);
