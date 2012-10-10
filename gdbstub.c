@@ -3,6 +3,7 @@
 #include "kernel.h"
 #include "regs.h"
 #include "printk.h"
+#include "string.h"
 #include "types.h"
 #include "uart.h"
 

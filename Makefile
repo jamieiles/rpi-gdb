@@ -14,7 +14,8 @@ OBJS := entry.o \
 	pinmux.o \
 	tzvecs.o \
 	gdbstub.o \
-	printk.o
+	printk.o \
+	string.o
 
 all:	install
 
