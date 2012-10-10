@@ -40,3 +40,16 @@ non-identity MMU mapping the RSP will cease to function.  A future enhancement
 will be to drop the application into non-secure mode (NS=1) and use the
 address translation capabilities to perform all memory accesses from the RSP
 and have that use it's own MMU configuration.
+
+Connecting with GDB
+-------------------
+
+Assuming that your serial port is ttyUSB0 then you can create a gdbscript with
+the following contents:
+
+    set architecture arm
+    set remotebaud 115200
+    target remote /dev/ttyUSB0
+
+and run with `gdb-multiarch -x gdbscript <BINARY>'.  Once in gdb you can load
+the binary with `load` then use all of the normal gdb commands.
