@@ -6,20 +6,18 @@
 _monitor_vecs:
 	b	mon_panic		@ System reset
 	b	mon_panic		@ Undefined instruction
-	b	_vec_swi_tz		@ Software interrupt
+	b	_vec_smc_tz		@ Software interrupt
 	b	mon_panic		@ Prefetch abort
 	b	mon_panic		@ Data abort
-	b	_vec_smc_tz		@ Reserved vector
+	b	mon_panic		@ Reserved vector
 	b	mon_panic		@ IRQ
 	b	_vec_fiq_tz		@ FIQ
 .popsection
 
-VECTOR(swi_tz)
-	ex_handler	#4, do_monitor, #CPSR_MODE_MON
 VECTOR(smc_tz)
-	ex_handler	#4, do_monitor, #CPSR_MODE_MON
+	ex_handler	#4, gdbstub_smc_handler, #CPSR_MODE_MON
 VECTOR(fiq_tz)
-	ex_handler	#4, do_monitor_fiq, #CPSR_MODE_MON
+	ex_handler	#4, gdbstub_io_handler, #CPSR_MODE_MON
 
 /*
  * Setup monitor mode.  Must be called from supervisor mode.
