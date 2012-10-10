@@ -382,6 +382,16 @@ static int read_len(const char **p, uint32_t *len)
 	return read_field(p, len, ':');
 }
 
+static void read_byte(const char **p, uint8_t *b)
+{
+	char buf[3];
+
+	memcpy(buf, *p, 2);
+	buf[2] = '\0';
+	*b = read_hex(buf, NULL);
+	*p += 2;
+}
+
 static int gdb_write_mem(struct arm_regs *regs, const char *msg)
 {
 	const char *resp;
@@ -397,10 +407,28 @@ static int gdb_write_mem(struct arm_regs *regs, const char *msg)
 		goto out;
 	}
 
-	v = read_hex(p, NULL);
-	if (write_mem(&v, addr, len)) {
-		resp = "E02";
-		goto out;
+	/*
+	 * Handle 16/32 bit access atomically as they could be register
+	 * read/writes and doing a bunch of byte accesses may not do the right
+	 * thing by the hardware.
+	 */
+	if (len == 2 || len == 4) {
+		v = read_hex(p, NULL);
+		if (write_mem(&v, addr, len)) {
+			resp = "E02";
+			goto out;
+		}
+	} else {
+		unsigned int m;
+
+		for (m = 0; m < len; ++m) {
+			uint8_t v;
+			read_byte(&p, &v);
+			if (write_mem(&v, addr + m, 1)) {
+				resp = "E02";
+				goto out;
+			}
+		}
 	}
 
 	resp = "OK";
